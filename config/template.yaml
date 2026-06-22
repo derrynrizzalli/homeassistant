@@ -1,9 +1,11 @@
-- name: Entertainment White Difference Power
-  unique_id: lounge_entertainment_white_difference_power
-  unit_of_measurement: W
-  device_class: power
-  state_class: measurement
-  state: >
-    {{
-      states('sensor.lounge_entertainment_white_multi_power') | float(0)
-    - states('sensor.lounge_ventilation_fans_power') | float(0)
+- sensor:
+    - name: Entertainment White Difference Power
+      unique_id: lounge_entertainment_white_difference_power
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+      state: >
+        {{
+          states('sensor.lounge_entertainment_white_multi_power') | float(0)
+        - states('sensor.lounge_ventilation_fans_power') | float(0)
+        }}
