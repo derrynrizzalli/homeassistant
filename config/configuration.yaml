@@ -27,14 +27,14 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 #template sensors
-sensor:  !include sensors.yaml
+#sensor:  !include sensors.yaml
 
 #customizations
 homeassistant:
   customize: !include customize.yaml
 
 #unsure if template or templates?
-template: !include template.yaml
+#template: !include template.yaml
 
 
 http:
