@@ -1,0 +1,449 @@
+"""UniFi Insights entity base class."""
+
+from __future__ import annotations
+
+import inspect
+import logging
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.entity import DeviceInfo, EntityDescription
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import (
+    DEVICE_TYPE_CAMERA,
+    DEVICE_TYPE_LIGHT,
+    DEVICE_TYPE_NVR,
+    DEVICE_TYPE_SENSOR,
+    DOMAIN,
+    MANUFACTURER,
+)
+from .coordinators import UnifiFacadeCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def get_field(data: dict[str, Any], *keys: str, default: Any = None) -> Any:
+    """
+    Get a field from data using multiple possible key names.
+
+    Handles both camelCase and snake_case field names from different API versions.
+    Skips keys whose value is None so that fallback keys are still checked.
+    """
+    for key in keys:
+        if key in data and data[key] is not None:
+            return data[key]
+    return default
+
+
+def is_device_online(data: dict[str, Any]) -> bool:
+    """
+    Check if device is online, handling different status field formats.
+
+    Handles:
+    - state: "ONLINE" / "OFFLINE"
+    - status: "online" / "offline"
+    """
+    state = get_field(data, "state", "status", default="")
+    if isinstance(state, str):
+        return state.upper() in ("ONLINE", "CONNECTED", "UP")
+    return False
+
+
+def get_client_type(client: dict[str, Any]) -> str:
+    """
+    Extract client type from client data.
+
+    The vendored API package serializes the ClientType enum to string values
+    ("WIRED" or "WIRELESS"). This helper normalizes the value for comparison
+    and handles edge cases.
+    """
+    client_type = client.get("type") or client.get("connection_type", "")
+    # Normalize to uppercase string
+    type_str = str(client_type).upper()
+    # Handle both direct values and any legacy enum format
+    if "WIRED" in type_str:
+        return "WIRED"
+    if "WIRELESS" in type_str:
+        return "WIRELESS"
+    return type_str
+
+
+def camera_supports_ptz(camera_data: dict[str, Any]) -> bool:
+    """Return True if a Protect camera advertises PTZ support."""
+    is_ptz = get_field(camera_data, "isPtz", "is_ptz", "hasPtz", default=False)
+    if isinstance(is_ptz, bool):
+        return is_ptz
+
+    feature_flags = get_field(camera_data, "featureFlags", "feature_flags", default={})
+    if isinstance(feature_flags, dict):
+        return bool(feature_flags.get("hasPtz") or feature_flags.get("has_ptz"))
+
+    return False
+
+
+async def async_call_coordinator_action[ActionResult](
+    coordinator: Any,
+    method_name: str,
+    error_message: str,
+    *action_args: Any,
+    fallback_factory: Callable[[], Awaitable[ActionResult]] | None = None,
+    **action_kwargs: Any,
+) -> ActionResult:
+    """Execute a coordinator action and convert unexpected failures to HA errors."""
+    handler = getattr(coordinator, method_name, None)
+    if handler is not None and inspect.iscoroutinefunction(handler):
+        try:
+            result: ActionResult = await handler(*action_args, **action_kwargs)
+            return result
+        except HomeAssistantError:
+            raise
+        except Exception as err:
+            raise HomeAssistantError(error_message) from err
+
+    if fallback_factory is None:
+        raise HomeAssistantError(error_message)
+
+    try:
+        return await fallback_factory()
+    except HomeAssistantError:
+        raise
+    except Exception as err:
+        raise HomeAssistantError(error_message) from err
+
+
+class UnifiInsightsEntity(CoordinatorEntity[UnifiFacadeCoordinator]):
+    """Base class for UniFi Insights entities."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: UnifiFacadeCoordinator,
+        description: EntityDescription,
+        site_id: str,
+        device_id: str,
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._site_id = site_id
+        self._device_id = device_id
+
+        # Get device data
+        device_data = coordinator.data["devices"][site_id][device_id]
+        device_name = get_field(
+            device_data, "name", default=f"UniFi Device {device_id}"
+        )
+        ip_address = get_field(device_data, "ipAddress", "ip_address", "ip", default="")
+
+        # Set unique ID
+        self._attr_unique_id = f"{site_id}_{device_id}_{description.key}"
+
+        # Create device info for individual device
+        device_info: dict[str, Any] = {
+            "identifiers": {(DOMAIN, f"{site_id}_{device_id}")},
+            "name": f"{device_name} ({ip_address})" if ip_address else device_name,
+            "manufacturer": MANUFACTURER,
+            "model": get_field(device_data, "model", default="Unknown Model"),
+            "sw_version": get_field(
+                device_data, "firmwareVersion", "firmware_version", "version"
+            ),
+            "configuration_url": (
+                f"{coordinator.network_client.base_url}/network/devices/{device_id}"
+            ),
+        }
+
+        # Add network connections
+        if mac := get_field(device_data, "macAddress", "mac_address", "mac"):
+            device_info["connections"] = {(CONNECTION_NETWORK_MAC, mac)}
+
+        # Add hardware version based on device features
+        hw_info = []
+
+        # Get port count
+        if (ports := device_data.get("port_table", [])) and isinstance(ports, list):
+            port_count = len(ports)
+            if port_count > 0:
+                hw_info.append(f"{port_count} Ports")
+
+        # Get radio info
+        if (radio_table := device_data.get("radio_table", [])) and isinstance(
+            radio_table, list
+        ):
+            for radio in radio_table:
+                if not isinstance(radio, dict):
+                    continue
+                radio_name = radio.get("name", "")
+                radio_type = radio.get("radio", "")
+                if radio_name and radio_type:
+                    hw_info.append(f"{radio_name} ({radio_type})")
+
+        if hw_info:
+            device_info["hw_version"] = " | ".join(hw_info)
+
+        # Set suggested area based on device type
+        model = device_data.get("model", "").lower()
+        if any(
+            model.startswith(prefix)
+            for prefix in ("usw", "switch", "uap", "ap", "udm", "usg")
+        ):
+            device_info["suggested_area"] = "Network"
+
+        self._attr_device_info = DeviceInfo(**device_info)  # type: ignore[typeddict-item]
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return device information."""
+        return self._attr_device_info
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        device_data = (
+            self.coordinator.data["devices"].get(self._site_id, {}).get(self._device_id)
+        )
+        if not device_data:
+            return False
+        return is_device_online(device_data)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        device_data = (
+            self.coordinator.data["devices"].get(self._site_id, {}).get(self._device_id)
+        )
+        if not device_data:
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+
+        self._attr_available = is_device_online(device_data)
+        self.async_write_ha_state()
+
+    @property
+    def device_data(self) -> dict[str, Any] | None:
+        """Return device data."""
+        devices = self.coordinator.data["devices"].get(self._site_id, {})
+        result = devices.get(self._device_id)
+        return result if isinstance(result, dict) else None
+
+    @property
+    def device_stats(self) -> dict[str, Any] | None:
+        """Return device statistics."""
+        stats = self.coordinator.data["stats"].get(self._site_id, {})
+        result = stats.get(self._device_id)
+        return result if isinstance(result, dict) else None
+
+
+class UnifiProtectEntity(CoordinatorEntity[UnifiFacadeCoordinator]):
+    """Base class for UniFi Protect entities."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: UnifiFacadeCoordinator,
+        device_type: str,
+        device_id: str,
+        entity_type: str | None = None,
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self._device_type = device_type
+        self._device_id = device_id
+        self._entity_type = entity_type
+
+        # Get device data
+        device_data = coordinator.data["protect"][f"{device_type}s"].get(device_id, {})
+        device_name = device_data.get(
+            "name", f"UniFi {device_type.capitalize()} {device_id}"
+        )
+
+        # For dual-camera entities, extract the original device ID for device grouping
+        original_device_id = device_id
+        parent_camera_id = device_data.get("_parent_camera_id")
+        if parent_camera_id:
+            original_device_id = parent_camera_id
+            # Use original device name without camera type suffix for device grouping
+            original_device_name = device_name
+            if " Main Camera" in device_name:
+                original_device_name = device_name.replace(" Main Camera", "")
+            elif " Package Camera" in device_name:
+                original_device_name = device_name.replace(" Package Camera", "")
+            device_name = original_device_name
+
+        # Set unique ID - include entity type if provided
+        if entity_type:
+            self._attr_unique_id = f"{DOMAIN}_{device_type}_{device_id}_{entity_type}"
+        else:
+            self._attr_unique_id = f"{DOMAIN}_{device_type}_{device_id}"
+
+        # Check if this device has a corresponding network device
+        network_device_id = None
+        network_site_id = None
+
+        # For cameras and NVRs, try to find a matching network device by MAC address
+        # This ensures devices like UDM-Pro show as a single device in HA
+        # Use the original device ID for MAC lookup in case of dual-camera
+        lookup_device_id = original_device_id if parent_camera_id else device_id
+        lookup_device_data = coordinator.data["protect"][f"{device_type}s"].get(
+            lookup_device_id, device_data
+        )
+
+        # Match cameras and NVRs to network devices by MAC
+        should_match_mac = (
+            device_type in (DEVICE_TYPE_CAMERA, DEVICE_TYPE_NVR)
+            and "mac" in lookup_device_data
+        )
+        if should_match_mac:
+            device_mac = lookup_device_data.get("mac")
+            if device_mac:
+                # Search for a network device with the same MAC
+                for site_id, devices in coordinator.data["devices"].items():
+                    for net_device_id, net_device in devices.items():
+                        if net_device.get("macAddress") == device_mac:
+                            network_device_id = net_device_id
+                            network_site_id = site_id
+                            _LOGGER.debug(
+                                "Matched network device %s at site %s for %s %s",
+                                net_device_id,
+                                site_id,
+                                device_type,
+                                lookup_device_id,
+                            )
+                            break
+                    if network_device_id:
+                        break
+
+        # Create device info based on whether we found a matching network device
+        device_info: dict[str, Any]
+        if network_device_id and network_site_id:
+            # Use the network device's identifiers to ensure all entities
+            # appear under the same device
+            network_device = coordinator.data["devices"][network_site_id][
+                network_device_id
+            ]
+            network_device_name = network_device.get(
+                "name", f"UniFi Device {network_device_id}"
+            )
+            ip_address = network_device.get("ipAddress", "")
+
+            device_info = {
+                "identifiers": {(DOMAIN, f"{network_site_id}_{network_device_id}")},
+                "name": f"{network_device_name} ({ip_address})"
+                if ip_address
+                else network_device_name,
+                "manufacturer": MANUFACTURER,
+                "model": network_device.get("model", "Unknown Model"),
+                "sw_version": (
+                    network_device.get("firmwareVersion")
+                    or network_device.get("firmware_version")
+                    or network_device.get("version")
+                ),
+                "configuration_url": (
+                    f"{coordinator.network_client.base_url}/network/devices/{network_device_id}"
+                ),
+            }
+
+            # Add network connections
+            if mac := network_device.get("macAddress"):
+                device_info["connections"] = {(CONNECTION_NETWORK_MAC, mac)}
+
+            _LOGGER.debug(
+                "Using network info for %s %s (net %s site %s)",
+                device_type,
+                device_id,
+                network_device_id,
+                network_site_id,
+            )
+        else:
+            # Create a new device entry for this Protect device
+            # Use original device ID for dual-camera grouping
+            device_id_for_identifier = (
+                original_device_id if parent_camera_id else device_id
+            )
+            protect_base_url = (
+                coordinator.protect_client.base_url
+                if coordinator.protect_client is not None
+                else None
+            )
+            device_info = {
+                "identifiers": {
+                    (DOMAIN, f"protect_{device_type}_{device_id_for_identifier}")
+                },
+                "name": device_name,
+                "manufacturer": MANUFACTURER,
+                "model": lookup_device_data.get(
+                    "type", f"UniFi {device_type.capitalize()}"
+                ),
+            }
+            if protect_base_url:
+                device_info["configuration_url"] = (
+                    f"{protect_base_url}/protect/devices/{device_id_for_identifier}"
+                )
+
+            # Set suggested area
+            if device_type == DEVICE_TYPE_CAMERA:
+                device_info["suggested_area"] = "Security"
+            elif device_type == DEVICE_TYPE_LIGHT:
+                device_info["suggested_area"] = "Exterior"
+            elif device_type == DEVICE_TYPE_SENSOR:
+                device_info["suggested_area"] = "Security"
+
+            # Add MAC connection if available and not None
+            if mac := lookup_device_data.get("mac"):
+                device_info["connections"] = {(CONNECTION_NETWORK_MAC, mac)}
+
+            _LOGGER.debug(
+                "Created new device info for %s device %s", device_type, device_id
+            )
+
+        self._attr_device_info = DeviceInfo(**device_info)  # type: ignore[typeddict-item]
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Return device information."""
+        return self._attr_device_info
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        device_data = self.coordinator.data["protect"][f"{self._device_type}s"].get(
+            self._device_id
+        )
+        if not device_data or not isinstance(device_data, dict):
+            return False
+        state = device_data.get("state")
+        return isinstance(state, str) and state == "CONNECTED"
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        device_data = self.device_data
+        if not device_data:
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+
+        state = device_data.get("state")
+        self._attr_available = isinstance(state, str) and state == "CONNECTED"
+        self._update_from_data()
+        self.async_write_ha_state()
+
+    def _update_from_data(self) -> None:
+        """Update entity from data."""
+        # To be implemented by subclasses
+
+    @property
+    def device_data(self) -> dict[str, Any] | None:
+        """Return device data."""
+        data = self.coordinator.data["protect"][f"{self._device_type}s"].get(
+            self._device_id
+        )
+        return data if isinstance(data, dict) else None

@@ -1,0 +1,72 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+prometheus:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+  
+  
+#Recorder purge  
+recorder:
+  purge_keep_days: 15
+  auto_purge: true
+  commit_interval: 30
+  
+influxdb:
+  max_retries: 3
+  default_measurement: state
+  include:
+    domains:
+      - sensor
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+#template sensors
+sensor:  !include sensors.yaml
+
+#customizations
+homeassistant:
+  customize: !include customize.yaml
+
+#unsure if template or templates?
+template: !include template.yaml
+
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24
+    - 172.30.32.0/24
+    - 172.30.232.0/24
+    - 10.0.0.0/8
+    - 192.168.0.0/16
+    - fd00::/8
+    - fe80::/10
+    - 2000::/3
+    - fc00::/7
+    - ff00::/8
+    
+    
+    # Example configuration.yaml entry
+#device_tracker:
+#  - platform: luci
+#    host: 10.1.2.36
+#    username: root
+#    password: !secret Tomatoes26.
+
+# Example configuration.yaml entry with manually specified Sonos IP addresses
+
+# Lovelace dashboards configuration added by AI Agent
+lovelace:
+  dashboards:
+    climate-air-quality:
+      mode: yaml
+      title: Climate & Air Quality Dashboard
+      icon: mdi:weather-partly-cloudy
+      show_in_sidebar: true
+      filename: ui-lovelace-climate-air-quality.yaml

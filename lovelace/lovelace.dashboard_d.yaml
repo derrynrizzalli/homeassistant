@@ -1,0 +1,203 @@
+config:
+  views:
+  - cards:
+    - active_color:
+      - 33
+      - 150
+      - 243
+      display_mode: time
+      entity: sensor.washing_machine_state
+      icon: mdi:washing-machine
+      pct_entity: sensor.washing_machine_current_power
+      program_entity: sensor.washing_machine_current_phase
+      show_details: true
+      show_program: true
+      show_state: true
+      spin_icon: true
+      time_entity: sensor.washing_machine_suggested_settings_available
+      title: Washing Machine
+      type: custom:ha-washdata-card
+    - active_color:
+      - 33
+      - 150
+      - 243
+      display_mode: time
+      entity: sensor.dishwasher_state
+      icon: mdi:washing-machine
+      pct_entity: sensor.dishwasher_current_power
+      program_entity: sensor.dishwasher_progress
+      show_details: true
+      show_program: true
+      show_state: true
+      spin_icon: true
+      time_entity: sensor.dishwasher_elapsed_time
+      title: Washing Machine
+      type: custom:ha-washdata-card
+    icon: mdi:washing-machine
+    path: custom-appliances
+    subview: false
+    title: Appliances
+    type: masonry
+  - cards:
+    - entities:
+      - entity: sensor.system_monitor_load_1_min
+        name: Load (1 min)
+      - entity: sensor.system_monitor_load_5_min
+        name: Load (5 min)
+      - entity: sensor.system_monitor_load_15_min
+        name: Load (15 min)
+      - entity: sensor.system_monitor_processor_temperature
+        name: Processor temperature
+      - entity: sensor.system_monitor_processor_use
+        name: Processor use
+      - entity: sensor.system_monitor_pwmfan_fan_speed
+        name: Pwmfan fan speed
+      show_header_toggle: true
+      state_color: true
+      title: System Monitor - OMV
+      type: entities
+    - entities:
+      - entity: sensor.backup_backup_manager_state
+        name: Backup Manager state
+      - entity: sensor.backup_last_attempted_automatic_backup
+        name: Last attempted automatic backup
+      - entity: sensor.backup_last_successful_automatic_backup
+        name: Last successful automatic backup
+      - entity: sensor.backup_next_scheduled_automatic_backup
+        name: Next scheduled automatic backup
+      title: Backup
+      type: entities
+    - chart_type: line
+      collection_key: sensor.
+      days_to_show: 7
+      energy_date_selection: false
+      entities:
+      - sensor.system_monitor_processor_temperature
+      expand_legend: true
+      hide_legend: false
+      period: 5minute
+      stat_types:
+      - mean
+      - min
+      - max
+      type: statistics-graph
+    icon: mdi:desktop-tower-monitor
+    path: custom-systemmonitor
+    show_icon_and_title: true
+    type: masonry
+  - cards:
+    - entities:
+      - entity: sensor.wn1820c_soil_moisture_1
+      expand_legend: true
+      hours_to_show: 24
+      logarithmic_scale: false
+      title: Soil - Rubber Plant
+      type: history-graph
+    path: custom-plants
+    show_icon_and_title: true
+    title: plants
+    type: masonry
+  - sections:
+    - cards:
+      - heading: New section
+        type: heading
+      - active_color:
+        - 33
+        - 150
+        - 243
+        display_mode: time
+        entity: sensor.washing_machine_state
+        icon: mdi:washing-machine
+        show_details: true
+        show_program: true
+        show_state: true
+        spin_icon: true
+        title: Washing Machine
+        type: custom:ha-washdata-card
+      type: grid
+    - cards:
+      - heading: New section
+        type: heading
+      type: grid
+    - cards:
+      - heading: Dishwasher
+        type: heading
+      - entity: select.dishwasher_cycle_program
+        type: tile
+      - entity: button.dishwasher_force_end_cycle
+        type: tile
+      - entity: button.dishwasher_pause_cycle
+        type: tile
+      - entity: button.dishwasher_resume_cycle
+        type: tile
+      type: grid
+    - cards:
+      - heading: Washing Machine
+        type: heading
+      - entity: sensor.washing_machine_profile_mixed_count
+        type: tile
+      - entity: sensor.washing_machine_profile_my_drying_time_20mins_count
+        type: tile
+      - entity: sensor.washing_machine_profile_quick_count
+        type: tile
+      - entity: sensor.washing_machine_suggested_settings_available
+        type: tile
+      type: grid
+    - cards:
+      - heading: Washing Machine
+        type: heading
+      - entity: sensor.washing_machine_current_phase
+        type: tile
+      - entity: sensor.washing_machine_current_power
+        type: tile
+      - entity: sensor.washing_machine_cycle_count
+        type: tile
+      - entity: sensor.washing_machine_elapsed_time
+        type: tile
+      - entity: sensor.washing_machine_program
+        type: tile
+      - entity: sensor.washing_machine_progress
+        type: tile
+      - entity: binary_sensor.washing_machine_running
+        type: tile
+      - entity: sensor.washing_machine_state
+        type: tile
+      - entity: sensor.washing_machine_time_remaining
+        type: tile
+      - entity: sensor.washing_machine_total_duration
+        type: tile
+      type: grid
+    - cards:
+      - heading: System Monitor
+        type: heading
+      - entity: sensor.system_monitor_processor_temperature
+        type: tile
+      - entity: sensor.system_monitor_pwmfan_fan_speed
+        type: tile
+      type: grid
+    type: sections
+  - cards:
+    - entities:
+      - entity: sensor.lounge_ultra_black_hp_active_current
+      - entity: sensor.kitchen_fridge_plug_active_current
+      - entity: sensor.living_room_sofa_extension_active_current
+      - entity: sensor.lounge_network_plug_black_multi_active_current
+      - entity: sensor.kitchen_dishwasher_plug_apparent_current
+      - entity: sensor.kitchen_fridge_plug_apparent_current
+      - entity: sensor.laundry_washing_machine_plug_apparent_current
+      - entity: sensor.office_main_active_current
+      title: Active Current
+      type: distribution
+    icon: mdi:flash
+    path: electricity
+    show_icon_and_title: true
+    title: Electricity
+    type: masonry
+  - cards: []
+    path: unifi
+    title: unifi
+    type: masonry
+  - cards: []
+    path: tst
+    title: TST
+    type: masonry

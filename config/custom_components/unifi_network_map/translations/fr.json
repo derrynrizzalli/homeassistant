@@ -1,0 +1,154 @@
+{
+  "title": "UniFi Network Map",
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Réauthentification",
+        "description": "Vos identifiants UniFi ne sont plus valides. Saisissez à nouveau votre nom d'utilisateur et votre mot de passe, ou fournissez une clé API.",
+        "data": {
+          "username": "Nom d'utilisateur",
+          "password": "Mot de passe",
+          "api_key": "Clé API"
+        },
+        "data_description": {
+          "api_key": "Clé API au niveau du site depuis UniFi OS (Paramètres -> Control Plane -> Intégrations). À utiliser à la place du nom d'utilisateur et du mot de passe."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurer la connexion",
+        "description": "Mettez à jour les détails de connexion de votre contrôleur UniFi.",
+        "data": {
+          "url": "URL du contrôleur",
+          "username": "Nom d'utilisateur",
+          "password": "Mot de passe",
+          "site": "Site",
+          "verify_ssl": "Vérifier SSL",
+          "api_key": "Clé API"
+        },
+        "data_description": {
+          "url": "Incluez le schéma (http ou https) et le port si nécessaire.",
+          "verify_ssl": "Les contrôleurs UniFi utilisent des certificats auto-signés par défaut, ce qui échouera à la vérification. N'activez que si vous avez installé un certificat de confiance.",
+          "api_key": "Clé API au niveau du site depuis UniFi OS (Paramètres -> Control Plane -> Intégrations). À utiliser à la place du nom d'utilisateur et du mot de passe."
+        }
+      },
+      "user": {
+        "title": "Connexion à UniFi",
+        "description": "Saisissez les détails de votre contrôleur UniFi. Utilisez soit une clé API (recommandée à partir d'UniFi OS 4.x), soit un nom d'utilisateur et un mot de passe.",
+        "data": {
+          "url": "URL du contrôleur",
+          "username": "Nom d’utilisateur",
+          "password": "Mot de passe",
+          "site": "Site",
+          "verify_ssl": "Vérifier le SSL",
+          "api_key": "Clé API"
+        },
+        "data_description": {
+          "url": "Incluez le schéma (http ou https) et le port si nécessaire.",
+          "api_key": "Clé API au niveau du site depuis UniFi OS (Paramètres -> Control Plane -> Intégrations). À utiliser à la place du nom d'utilisateur et du mot de passe."
+        }
+      },
+      "init": {
+        "title": "Options de la carte",
+        "description": "Choisissez ce qui apparaît sur la carte et la façon dont elle est rendue.",
+        "data": {
+          "include_ports": "Afficher les étiquettes de ports",
+          "include_clients": "Afficher les clients",
+          "client_scope": "Portée des clients",
+          "only_unifi": "Uniquement les appareils UniFi",
+          "svg_isometric": "Disposition isométrique",
+          "svg_width": "Largeur SVG (px)",
+          "svg_height": "Hauteur SVG (px)",
+          "request_timeout_seconds": "Délai d’attente (secondes)",
+          "use_cache": "Mettre en cache la carte rendue"
+        },
+        "data_description": {
+          "include_ports": "Ajoute les étiquettes de ports de switch aux liens.",
+          "include_clients": "Inclut les appareils clients dans la topologie.",
+          "client_scope": "Choisissez les clients filaires, sans fil ou tous.",
+          "only_unifi": "Masque les appareils non UniFi dans la topologie.",
+          "svg_isometric": "Rend une vue de style 3D.",
+          "svg_width": "Laissez vide pour un dimensionnement automatique.",
+          "svg_height": "Laissez vide pour un dimensionnement automatique.",
+          "request_timeout_seconds": "Interrompt les appels à l’API UniFi après ce nombre de secondes.",
+          "use_cache": "Réutilise le dernier rendu entre les sondages."
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Saisissez une URL de contrôleur valide incluant http ou https.",
+      "url_has_credentials": "N'incluez pas le nom d'utilisateur ou le mot de passe dans l'URL. Utilisez les champs séparés ci-dessous.",
+      "invalid_port": "L'URL contient un numéro de port invalide. Les ports doivent être compris entre 1 et 65535.",
+      "empty_credential": "Indiquez un site, ainsi qu'une clé API ou un nom d'utilisateur et un mot de passe (pas les deux méthodes d'authentification).",
+      "invalid_auth": "Nom d'utilisateur ou mot de passe invalide.",
+      "cannot_connect": "Impossible de se connecter au contrôleur UniFi."
+    },
+    "abort": {
+      "already_configured": "Ce contrôleur et ce site sont déjà configurés.",
+      "reauth_successful": "Réauthentification réussie.",
+      "reconfigure_successful": "Reconfiguration réussie."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options de la carte",
+        "description": "Choisissez ce qui apparaît sur la carte et la façon dont elle est rendue.",
+        "data": {
+          "scan_interval": "Intervalle de mise à jour (minutes)",
+          "include_ports": "Afficher les étiquettes de ports",
+          "include_clients": "Afficher les clients",
+          "client_scope": "Portée des clients",
+          "only_unifi": "Uniquement les appareils UniFi",
+          "svg_isometric": "Disposition isométrique",
+          "svg_width": "Largeur SVG (px)",
+          "svg_height": "Hauteur SVG (px)",
+          "request_timeout_seconds": "Délai d'attente (secondes)",
+          "payload_cache_ttl": "TTL du cache de payload (secondes)",
+          "use_cache": "Mettre en cache la carte rendue",
+          "tracked_clients": "MACs des clients suivis",
+          "show_wan": "Afficher le WAN en amont",
+          "wan_label": "Nom du FAI WAN",
+          "wan_speed": "Vitesse du FAI WAN",
+          "wan2_label": "Nom du FAI WAN2",
+          "wan2_speed": "Vitesse du FAI WAN2",
+          "wan2_disabled": "Statut WAN2",
+          "show_vpn": "Show VPN tunnels"
+        },
+        "data_description": {
+          "scan_interval": "Fréquence de rafraîchissement des données depuis le contrôleur UniFi.",
+          "include_ports": "Ajoute les étiquettes de ports de switch aux liens.",
+          "include_clients": "Inclut les appareils clients dans la topologie.",
+          "client_scope": "Choisissez les clients filaires, sans fil ou tous.",
+          "only_unifi": "Masque les appareils non UniFi dans la topologie.",
+          "svg_isometric": "Rend une vue de style 3D.",
+          "svg_width": "Laissez vide pour un dimensionnement automatique.",
+          "svg_height": "Laissez vide pour un dimensionnement automatique.",
+          "request_timeout_seconds": "Interrompt les appels à l'API UniFi après ce nombre de secondes.",
+          "payload_cache_ttl": "Met en cache les données de payload enrichies pendant ce nombre de secondes. Définir à 0 pour désactiver.",
+          "use_cache": "Réutilise le dernier rendu entre les sondages.",
+          "tracked_clients": "Adresses MAC des clients pour créer des capteurs de présence. Une par ligne, ex. aa:bb:cc:dd:ee:ff",
+          "show_wan": "Affiche l'icône globe et les infos d'interface WAN au-dessus de la passerelle.",
+          "wan_label": "Label personnalisé pour WAN1 (ex. Free Fibre). Laissez vide pour la détection automatique.",
+          "wan_speed": "Vitesse FAI personnalisée pour WAN1 (ex. 1 Gbps). Laissez vide pour la détection automatique.",
+          "wan2_label": "Label personnalisé pour WAN2. Laissez vide pour la détection automatique.",
+          "wan2_speed": "Vitesse FAI personnalisée pour WAN2. Laissez vide pour la détection automatique.",
+          "wan2_disabled": "Détecte automatiquement depuis le contrôleur. Définir sur Désactivé pour masquer WAN2.",
+          "show_vpn": "Display VPN tunnels (site-to-site) below the gateway with status indicators."
+        }
+      }
+    },
+    "error": {
+      "expected_int": "Saisissez un nombre entier de pixels ou laissez le champ vide."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Statut"
+      },
+      "vlan_clients": {
+        "name": "{vlan_name} clients"
+      }
+    }
+  }
+}

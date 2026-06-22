@@ -1,0 +1,425 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connection Type",
+        "description": "Select how you want to connect to your UniFi Controller.",
+        "data": {
+          "connection_type": "Connection Type"
+        },
+        "data_description": {
+          "connection_type": "Local: Connect directly to your UniFi device on your network.\nRemote: Connect via UniFi Cloud using your cloud API key."
+        }
+      },
+      "local": {
+        "title": "Local Connection",
+        "description": "Connect directly to your UniFi device on your local network.",
+        "data": {
+          "host": "Host URL",
+          "api_key": "[%key:common::config_flow::data::api_key%]",
+          "verify_ssl": "Verify SSL Certificate"
+        },
+        "data_description": {
+          "host": "The URL of your UniFi device (e.g., https://192.168.1.1)",
+          "api_key": "API key from your UniFi Controller (Settings → Control Plane → API Keys)",
+          "verify_ssl": "Disable for self-signed certificates (common for local devices)"
+        }
+      },
+      "remote": {
+        "title": "Remote Connection (UniFi Cloud)",
+        "description": "Connect to your UniFi device via the UniFi Cloud.",
+        "data": {
+          "api_key": "[%key:common::config_flow::data::api_key%]"
+        },
+        "data_description": {
+          "api_key": "Cloud API key from your UniFi account. After validation, you will choose one of the consoles that this API key can access."
+        }
+      },
+      "select_console": {
+        "title": "Select remote console",
+        "description": "Choose the UniFi console that you want to connect to.",
+        "data": {
+          "console_id": "Console"
+        },
+        "data_description": {
+          "console_id": "These consoles were discovered with your API key."
+        }
+      },
+      "reauth_confirm": {
+        "title": "[%key:common::config_flow::title::reauth%]",
+        "description": "The UniFi Insights integration needs to re-authenticate your account.",
+        "data": {
+          "api_key": "[%key:common::config_flow::data::api_key%]"
+        },
+        "data_description": {
+          "api_key": "A new API key from your UniFi Controller (Settings → Control Plane → API Keys)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure",
+        "description": "Update the UniFi Insights integration configuration.",
+        "data": {
+          "host": "Host URL",
+          "api_key": "[%key:common::config_flow::data::api_key%]",
+          "verify_ssl": "Verify SSL Certificate",
+          "console_id": "Console ID"
+        },
+        "data_description": {
+          "host": "The URL of your UniFi device (e.g., https://192.168.1.1)",
+          "api_key": "API key from your UniFi Controller (Settings → Control Plane → API Keys)",
+          "verify_ssl": "Disable for self-signed certificates (common for local devices)",
+          "console_id": "The UniFi cloud console ID this entry connects to"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "invalid_console_id": "The selected console could not be accessed with this API key.",
+      "no_remote_consoles": "No remote UniFi consoles were found for this API key.",
+      "api_unsupported": "The UniFi controller did not respond to the official Network Integration API (HTTP 404). This integration requires UniFi OS (e.g. UDM, UDR, Cloud Key Gen2+, UCG) or UniFi Cloud access. Self-hosted UniFi Network installations (Linux/Docker/Proxmox) do not expose this API.",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
+      "account_mismatch": "The API key provided does not match the original account. Please use the same API key or remove and re-add the integration."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "UniFi Insights Options",
+        "description": "Configure additional options for the UniFi Insights integration.",
+        "data": {
+          "track_wifi_clients": "Track WiFi Clients",
+          "track_wired_clients": "Track Wired Clients",
+          "client_control": "Enable Client Control"
+        },
+        "data_description": {
+          "track_wifi_clients": "Create device tracker entities for connected WiFi clients. This may create many entities.",
+          "track_wired_clients": "Create device tracker entities for connected wired (LAN) clients. This may create many entities.",
+          "client_control": "Create allow/block switch and reconnect button entities for connected clients. Disable to prevent orphaned entities when clients leave the network."
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh_data": {
+      "name": "Refresh Data",
+      "description": "Force an immediate refresh of UniFi Insights data.",
+      "fields": {
+        "site_id": {
+          "name": "Site ID",
+          "description": "Optional site ID to refresh. If not specified, refreshes all sites."
+        }
+      }
+    },
+    "restart_device": {
+      "name": "Restart Device",
+      "description": "Restart a UniFi device.",
+      "fields": {
+        "site_id": {
+          "name": "Site ID",
+          "description": "The site ID where the device is located."
+        },
+        "device_id": {
+          "name": "Device ID",
+          "description": "The ID of the device to restart."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cpu_usage": {
+        "name": "CPU Usage"
+      },
+      "memory_usage": {
+        "name": "Memory Usage"
+      },
+      "uptime": {
+        "name": "Uptime"
+      },
+      "tx_rate": {
+        "name": "Uplink Transmit Rate"
+      },
+      "rx_rate": {
+        "name": "Uplink Receive Rate"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "general_temperature": {
+        "name": "Temperature"
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "light_level": {
+        "name": "Light Level"
+      },
+      "light": {
+        "name": "Light"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "storage_used": {
+        "name": "Storage Used"
+      },
+      "storage_total": {
+        "name": "Storage Total"
+      },
+      "storage_available": {
+        "name": "Storage Available"
+      },
+      "storage_used_percent": {
+        "name": "Storage Used Percentage"
+      },
+      "poe_total_power": {
+        "name": "Total PoE Power"
+      },
+      "firmware_version": {
+        "name": "Firmware Version"
+      },
+      "wired_clients": {
+        "name": "Wired Clients"
+      },
+      "wireless_clients": {
+        "name": "Wireless Clients"
+      },
+      "port_poe_power": {
+        "name": "{port_label} PoE Power"
+      },
+      "port_speed": {
+        "name": "{port_label} Speed"
+      },
+      "port_tx_bytes": {
+        "name": "{port_label} TX"
+      },
+      "port_rx_bytes": {
+        "name": "{port_label} RX"
+      },
+      "port_tx_rate": {
+        "name": "{port_label} TX Rate"
+      },
+      "port_rx_rate": {
+        "name": "{port_label} RX Rate"
+      },
+      "port_sfp_module": {
+        "name": "{port_label} SFP Module"
+      },
+      "port_sfp_vendor": {
+        "name": "{port_label} SFP Vendor"
+      },
+      "port_sfp_compliance": {
+        "name": "{port_label} SFP Type"
+      },
+      "port_sfp_serial": {
+        "name": "{port_label} SFP Serial"
+      },
+      "wan_ip": {
+        "name": "WAN IP Address"
+      },
+      "wan_uptime": {
+        "name": "WAN Uptime"
+      },
+      "site_total_clients": {
+        "name": "Total Clients"
+      },
+      "site_wired_clients": {
+        "name": "Wired Clients"
+      },
+      "site_wireless_clients": {
+        "name": "Wireless Clients"
+      }
+    },
+    "binary_sensor": {
+      "device_status": {
+        "name": "Status",
+        "state": {
+          "on": "Online",
+          "off": "Offline"
+        }
+      },
+      "wan_status": {
+        "name": "WAN Status"
+      },
+      "camera_motion": {
+        "name": "Motion Detection"
+      },
+      "camera_person_detection": {
+        "name": "Person Detection"
+      },
+      "camera_vehicle_detection": {
+        "name": "Vehicle Detection"
+      },
+      "camera_animal_detection": {
+        "name": "Animal Detection"
+      },
+      "camera_package_detection": {
+        "name": "Package Detection"
+      },
+      "camera_doorbell_ring": {
+        "name": "Ring"
+      },
+      "sensor_motion": {
+        "name": "Motion Detection"
+      },
+      "sensor_door": {
+        "name": "Door/Window Status"
+      },
+      "sensor_tamper": {
+        "name": "Tamper Detection"
+      },
+      "sensor_leak": {
+        "name": "Leak Detection"
+      },
+      "port_sfp_present": {
+        "name": "SFP Module"
+      },
+      "motion": {
+        "name": "Motion"
+      },
+      "door": {
+        "name": "Door"
+      },
+      "is_recording": {
+        "name": "Recording"
+      },
+      "is_dark": {
+        "name": "Dark"
+      },
+      "doorbell": {
+        "name": "Doorbell"
+      }
+    },
+    "button": {
+      "device_restart": {
+        "name": "Restart"
+      },
+      "reboot": {
+        "name": "Reboot"
+      },
+      "play": {
+        "name": "Play"
+      },
+      "ptz_patrol_start": {
+        "name": "Start PTZ Patrol"
+      },
+      "ptz_patrol_stop": {
+        "name": "Stop PTZ Patrol"
+      }
+    },
+    "camera": {
+      "camera": {
+        "name": "Camera"
+      }
+    },
+    "light": {
+      "floodlight": {
+        "name": "Floodlight"
+      }
+    },
+    "switch": {
+      "microphone": {
+        "name": "Microphone"
+      },
+      "privacy_mode": {
+        "name": "Privacy Mode"
+      },
+      "status_light": {
+        "name": "Status Light"
+      },
+      "hdr_mode": {
+        "name": "HDR Mode"
+      },
+      "high_fps_mode": {
+        "name": "High FPS Mode"
+      }
+    },
+    "select": {
+      "hdr_mode": {
+        "name": "HDR Mode"
+      },
+      "video_mode": {
+        "name": "Video Mode"
+      },
+      "ringtone": {
+        "name": "Ringtone"
+      },
+      "ptz_preset": {
+        "name": "PTZ Preset"
+      },
+      "liveview": {
+        "name": "Liveview"
+      },
+      "recording_mode": {
+        "name": "Recording Mode"
+      },
+      "infrared_mode": {
+        "name": "Infrared Mode"
+      }
+    },
+    "number": {
+      "mic_volume": {
+        "name": "Microphone Volume"
+      },
+      "brightness_level": {
+        "name": "Brightness Level"
+      },
+      "speaker_volume": {
+        "name": "Speaker Volume"
+      },
+      "chime_volume": {
+        "name": "Chime Volume"
+      },
+      "repeat_times": {
+        "name": "Repeat Times"
+      }
+    },
+    "event": {
+      "doorbell_ring": {
+        "name": "Doorbell"
+      },
+      "smart_detection": {
+        "name": "Smart Detection"
+      },
+      "sensor_event": {
+        "name": "Door/Window"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "cannot_connect": {
+      "message": "Unable to connect to UniFi controller at {host}. Please check the host address and network connectivity."
+    },
+    "invalid_auth": {
+      "message": "Invalid API key. Please verify your credentials and try again."
+    },
+    "timeout": {
+      "message": "Connection to UniFi controller timed out. The device may be unreachable or overloaded."
+    },
+    "device_not_found": {
+      "message": "Device {device_id} was not found in site {site_id}."
+    },
+    "no_coordinator": {
+      "message": "No UniFi Insights coordinator found. Please ensure the integration is properly configured."
+    },
+    "no_protect_coordinator": {
+      "message": "No UniFi Protect coordinator found. Please ensure UniFi Protect is available."
+    },
+    "api_error": {
+      "message": "API error: {error}"
+    },
+    "unknown_error": {
+      "message": "An unexpected error occurred: {error}"
+    }
+  }
+}

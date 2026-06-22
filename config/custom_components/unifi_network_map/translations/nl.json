@@ -1,0 +1,154 @@
+{
+  "title": "UniFi Network Map",
+  "config": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Opnieuw authenticeren",
+        "description": "Je UniFi-inloggegevens zijn niet meer geldig. Voer je gebruikersnaam en wachtwoord opnieuw in, of geef een API-sleutel op.",
+        "data": {
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "api_key": "Site-API-sleutel uit UniFi OS (Instellingen -> Control Plane -> Integraties). Gebruik deze in plaats van gebruikersnaam en wachtwoord."
+        }
+      },
+      "reconfigure": {
+        "title": "Verbinding herconfigureren",
+        "description": "Werk de verbindingsgegevens van je UniFi-controller bij.",
+        "data": {
+          "url": "Controller-URL",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "site": "Site",
+          "verify_ssl": "SSL verifiëren",
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "url": "Vermeld het schema (http of https) en de poort indien nodig.",
+          "verify_ssl": "UniFi-controllers gebruiken standaard zelfondertekende certificaten, die de verificatie niet doorstaan. Schakel dit alleen in als je een vertrouwd certificaat hebt geïnstalleerd.",
+          "api_key": "Site-API-sleutel uit UniFi OS (Instellingen -> Control Plane -> Integraties). Gebruik deze in plaats van gebruikersnaam en wachtwoord."
+        }
+      },
+      "user": {
+        "title": "Verbinden met UniFi",
+        "description": "Voer de gegevens van je UniFi-controller in. Gebruik een API-sleutel (aanbevolen vanaf UniFi OS 4.x) of een gebruikersnaam en wachtwoord.",
+        "data": {
+          "url": "Controller-URL",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "site": "Site",
+          "verify_ssl": "SSL verifiëren",
+          "api_key": "API-sleutel"
+        },
+        "data_description": {
+          "url": "Gebruik het schema (http of https) en poort indien nodig.",
+          "api_key": "Site-API-sleutel uit UniFi OS (Instellingen -> Control Plane -> Integraties). Gebruik deze in plaats van gebruikersnaam en wachtwoord."
+        }
+      },
+      "init": {
+        "title": "Kaartopties",
+        "description": "Kies wat op de kaart verschijnt en hoe deze wordt weergegeven.",
+        "data": {
+          "include_ports": "Poortlabels tonen",
+          "include_clients": "Clients tonen",
+          "client_scope": "Clientbereik",
+          "only_unifi": "Alleen UniFi-apparaten",
+          "svg_isometric": "Isometrische lay-out",
+          "svg_width": "SVG-breedte (px)",
+          "svg_height": "SVG-hoogte (px)",
+          "request_timeout_seconds": "Time-out verzoek (seconden)",
+          "use_cache": "Gerenderde kaart cachen"
+        },
+        "data_description": {
+          "include_ports": "Voegt switchpoortlabels toe aan verbindingen.",
+          "include_clients": "Voegt clientapparaten toe aan de topologie.",
+          "client_scope": "Kies bekabelde, draadloze of alle clients.",
+          "only_unifi": "Verberg niet-UniFi-apparaten in de topologie.",
+          "svg_isometric": "Render een 3D-achtige weergave.",
+          "svg_width": "Laat leeg voor automatisch formaat.",
+          "svg_height": "Laat leeg voor automatisch formaat.",
+          "request_timeout_seconds": "Breek UniFi API-aanroepen af na dit aantal seconden.",
+          "use_cache": "Hergebruik de laatste render tussen polls."
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Voer een geldige controller-URL in inclusief http of https.",
+      "url_has_credentials": "Voeg geen gebruikersnaam of wachtwoord toe aan de URL. Gebruik de aparte velden hieronder.",
+      "invalid_port": "De URL bevat een ongeldig poortnummer. Poorten moeten tussen 1 en 65535 liggen.",
+      "empty_credential": "Geef een site op, plus een API-sleutel of zowel gebruikersnaam als wachtwoord (niet beide auth-methoden).",
+      "invalid_auth": "Ongeldige gebruikersnaam of wachtwoord.",
+      "cannot_connect": "Kan geen verbinding maken met de UniFi-controller."
+    },
+    "abort": {
+      "already_configured": "Deze controller en site zijn al geconfigureerd.",
+      "reauth_successful": "Herauthenticatie geslaagd.",
+      "reconfigure_successful": "Herconfiguratie geslaagd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kaartopties",
+        "description": "Kies wat op de kaart verschijnt en hoe deze wordt weergegeven.",
+        "data": {
+          "scan_interval": "Verversingsinterval (minuten)",
+          "include_ports": "Poortlabels tonen",
+          "include_clients": "Clients tonen",
+          "client_scope": "Clientbereik",
+          "only_unifi": "Alleen UniFi-apparaten",
+          "svg_isometric": "Isometrische lay-out",
+          "svg_width": "SVG-breedte (px)",
+          "svg_height": "SVG-hoogte (px)",
+          "request_timeout_seconds": "Time-out verzoek (seconden)",
+          "payload_cache_ttl": "Payload-cache-TTL (seconden)",
+          "use_cache": "Gerenderde kaart cachen",
+          "tracked_clients": "Gevolgde client-MACs",
+          "show_wan": "WAN-upstream tonen",
+          "wan_label": "WAN ISP-naam",
+          "wan_speed": "WAN ISP-snelheid",
+          "wan2_label": "WAN2 ISP-naam",
+          "wan2_speed": "WAN2 ISP-snelheid",
+          "wan2_disabled": "WAN2-status",
+          "show_vpn": "Show VPN tunnels"
+        },
+        "data_description": {
+          "scan_interval": "Hoe vaak gegevens worden opgehaald van de UniFi-controller.",
+          "include_ports": "Voegt switchpoortlabels toe aan verbindingen.",
+          "include_clients": "Voegt clientapparaten toe aan de topologie.",
+          "client_scope": "Kies bekabelde, draadloze of alle clients.",
+          "only_unifi": "Verberg niet-UniFi-apparaten in de topologie.",
+          "svg_isometric": "Render een 3D-achtige weergave.",
+          "svg_width": "Laat leeg voor automatisch formaat.",
+          "svg_height": "Laat leeg voor automatisch formaat.",
+          "request_timeout_seconds": "Breek UniFi API-aanroepen af na dit aantal seconden.",
+          "payload_cache_ttl": "Cache verrijkte payload-gegevens gedurende dit aantal seconden. Stel in op 0 om uit te schakelen.",
+          "use_cache": "Hergebruik de laatste render tussen polls.",
+          "tracked_clients": "MAC-adressen van clients voor aanwezigheidssensoren. Eén per regel, bijv. aa:bb:cc:dd:ee:ff",
+          "show_wan": "Toon wereldbol-icoon en WAN-interface-info boven de gateway.",
+          "wan_label": "Aangepast label voor WAN1 (bijv. KPN Fiber). Laat leeg voor automatische detectie.",
+          "wan_speed": "Aangepaste ISP-snelheid voor WAN1 (bijv. 1 Gbps). Laat leeg voor automatische detectie.",
+          "wan2_label": "Aangepast label voor WAN2. Laat leeg voor automatische detectie.",
+          "wan2_speed": "Aangepaste ISP-snelheid voor WAN2. Laat leeg voor automatische detectie.",
+          "wan2_disabled": "Detecteert automatisch via de controller. Stel in op Uitgeschakeld om WAN2 te verbergen.",
+          "show_vpn": "Display VPN tunnels (site-to-site) below the gateway with status indicators."
+        }
+      }
+    },
+    "error": {
+      "expected_int": "Voer een geheel aantal pixels in of laat het veld leeg."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status"
+      },
+      "vlan_clients": {
+        "name": "{vlan_name} clients"
+      }
+    }
+  }
+}

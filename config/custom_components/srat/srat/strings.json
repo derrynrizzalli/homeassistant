@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to SRAT",
+        "description": "Enter the connection details for your SRAT instance.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "hassio_confirm": {
+        "title": "SRAT Add-on Discovered",
+        "description": "The SRAT add-on **{addon}** has been discovered at `{host}:{port}`. Do you want to set up this integration?"
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the SRAT API. Please check the host and port.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This SRAT instance is already configured.",
+      "not_srat_addon": "The discovered add-on is not a recognized SRAT add-on."
+    }
+  },
+  "issues": {
+    "custom_component_restart_required": {
+      "title": "SRAT: Home Assistant restart required",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restart Home Assistant",
+            "description": "The SRAT custom component was recently installed, upgraded, or uninstalled. Confirm to restart Home Assistant to apply the changes. All automations, integrations, and services will be temporarily unavailable during the restart."
+          }
+        }
+      }
+    },
+    "custom_component_missing": {
+      "title": "SRAT custom component not detected",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Acknowledge",
+            "description": "The SRAT custom component is not installed and no active WebSocket connection is present. Go to the SRAT add-on Settings → Home Assistant section to install the custom component and then restart Home Assistant."
+          }
+        }
+      }
+    },
+    "addon_config_changed": {
+      "title": "SRAT add-on configuration changed externally",
+      "description": "The add-on options file was modified outside of SRAT. Reload the SRAT add-on configuration to apply the new settings."
+    }
+  }
+}

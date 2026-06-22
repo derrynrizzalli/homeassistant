@@ -1,0 +1,38 @@
+icon: mdi:thermometer
+require_admin: false
+show_in_sidebar: true
+title: Temperature Tracking
+views:
+- cards:
+  - color_thresholds:
+    - color: '#0000FF'
+      value: 0
+    - color: '#00BFFF'
+      value: 10
+    - color: '#00FF00'
+      value: 15
+    - color: '#FFFF00'
+      value: 20
+    - color: '#FFA500'
+      value: 25
+    - color: '#FF0000'
+      value: 30
+    entities:
+    - sensor.home_temp
+    - sensor.living_room_temp
+    - sensor.kitchen_temp
+    - sensor.laundry_temp
+    - sensor.outdoor_temp
+    hours_to_show: 24
+    line_width: 2
+    name: Temperature Tracking
+    points_per_hour: 4
+    show:
+      average: true
+      extrema: true
+      labels: true
+      legend: true
+      points: true
+    smoothing: true
+    type: custom:mini-graph-card
+  title: Temperature Overview

@@ -1,0 +1,643 @@
+- alias: Laundry Motion LIght
+  description: ''
+  id: '1767680589661'
+  use_blueprint:
+    input:
+      light_target:
+        entity_id: light.laundry_light
+      motion_entity: binary_sensor.laundry_sensor_motion
+      no_motion_wait: 180
+    path: homeassistant/motion_light.yaml
+- alias: Pantry Motion LIght
+  description: ''
+  id: '1767680635261'
+  use_blueprint:
+    input:
+      light_target:
+        entity_id: light.pantry_light
+      motion_entity: binary_sensor.pantry_sensor_motion
+    path: homeassistant/motion_light.yaml
+- actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - leave
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.home
+      - action: media_player.turn_off
+        target:
+          entity_id: media_player.sony_bravia_7
+      - action: fan.set_percentage
+        data:
+          percentage: 100
+        target:
+          entity_id: fan.air_purifier
+      - delay: 03:00:00
+      - action: fan.set_preset_mode
+        data:
+          preset_mode: auto
+        target:
+          entity_id: fan.air_purifier
+    - conditions:
+      - condition: trigger
+        id:
+        - enter
+      sequence:
+      - if:
+        - condition: state
+          entity_id: fan.air_purifier
+          state: 'on'
+        - above: 99
+          attribute: percentage
+          condition: numeric_state
+          entity_id: fan.air_purifier
+        then:
+        - action: fan.set_preset_mode
+          data:
+            preset_mode: auto
+          target:
+            entity_id: fan.air_purifier
+      - if:
+        - after: sunset
+          condition: sun
+        then:
+        - action: light.turn_on
+          data:
+            scene: Lake Placid
+          target:
+            entity_id: light.home
+    default: []
+  alias: Home Presence Routine
+  conditions: []
+  description: Manages home state based on presence. Turns off all lights and TV when
+    away, sets air purifier to 10
+  id: '1768385363238'
+  mode: single
+  triggers:
+  - entity_id: device_tracker.rizzas_iphone
+    event: leave
+    id: leave
+    trigger: zone
+    zone: zone.home
+  - entity_id: device_tracker.rizzas_iphone
+    event: enter
+    id: enter
+    trigger: zone
+    zone: zone.home
+- action:
+  - service: light.turn_off
+    target:
+      entity_id:
+      - light.floor_lamp
+      - light.pantry_light
+      - light.kitchen_strip
+      - light.laundry_light
+      - light.tv_light
+      - light.hue_lightstrip_outdoor_1
+      - light.bedside_lamp
+      - light.desk_lamp
+  alias: Turn off lights at sunrise (except kitchen bench)
+  condition: []
+  description: Turns off all regular lights in the house except the kitchen bench
+    light when the sun rises.
+  id: ai_agent_auto_1777263159008
+  mode: single
+  trigger:
+  - event: sunrise
+    offset: 00:00:00
+    platform: sun
+- action:
+  - service: light.turn_on
+    target:
+      entity_id:
+      - light.floor_lamp
+      - light.pantry_light
+      - light.kitchen_strip
+      - light.laundry_light
+      - light.tv_light
+      - light.hue_lightstrip_outdoor_1
+      - light.bedside_lamp
+      - light.desk_lamp
+      - light.kitchen_bench
+  alias: Turn on lights at sunset (including kitchen bench)
+  condition: []
+  description: Turns on all regular lights in the house, including the kitchen bench
+    light, when the sun sets.
+  id: ai_agent_auto_1777263201182
+  mode: single
+  trigger:
+  - event: sunset
+    offset: 00:00:00
+    platform: sun
+- id: ai_agent_auto_1777415262678
+  alias: Water Indoor Plants - Low Moisture Alert
+  description: Creates a persistent notification when soil moisture drops below 30%.
+  triggers:
+  - below: 35
+    entity_id:
+    - sensor.wn1820c_soil_moisture_1
+    trigger: numeric_state
+  conditions: []
+  actions:
+  - data:
+      message: Your indoor plant's soil moisture is below 30%. It's time to water!
+      notification_id: plant_water_reminder
+      title: Plant Watering Reminder
+    action: persistent_notification.create
+  mode: single
+- id: '1778016873294'
+  alias: Living Room / Lounge Switch Scene Switcher
+  description: ''
+  use_blueprint:
+    input:
+      brightness_down_repeat_action:
+      - if:
+        - condition: state
+          entity_id: light.tv_light
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.tv_light
+      - if:
+        - condition: state
+          entity_id: light.floor_lamp
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.floor_lamp
+      brightness_down_short_action:
+      - if:
+        - condition: state
+          entity_id: light.tv_light
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.tv_light
+      - if:
+        - condition: state
+          entity_id: light.floor_lamp
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.floor_lamp
+      brightness_up_repeat_action:
+      - if:
+        - condition: state
+          entity_id: light.tv_light
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.tv_light
+      - if:
+        - condition: state
+          entity_id: light.floor_lamp
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.floor_lamp
+      brightness_up_short_action:
+      - if:
+        - condition: state
+          entity_id: light.tv_light
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.tv_light
+      - if:
+        - condition: state
+          entity_id: light.floor_lamp
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.floor_lamp
+      dimmer_device: 9e0e8daf2019d22cf1f9c97624a7372c
+      off_long_action:
+      - action: light.turn_off
+        data:
+          transition: 1
+        target:
+          entity_id:
+          - light.tv_light
+          - light.floor_lamp
+      - action: input_number.set_value
+        data:
+          value: 0
+        target:
+          entity_id: input_number.lounge_scene_index
+      off_short_action:
+      - variables:
+          scenes:
+          - scene.lounge_bright
+          - scene.lounge_cool_bright
+          - scene.lounge_dreamy_dusk
+          - scene.lounge_lake_placid
+          - scene.lounge_nightlight
+          - scene.lounge_nighttime
+          - scene.lounge_read
+          - scene.lounge_savanna_sunset
+          - scene.lounge_shine
+          - scene.lounge_tropical_twilight
+          current: '{{ states(''input_number.lounge_scene_index'') | int }}'
+          next: '{{ (current + 1) % scenes | length }}'
+      - action: scene.turn_on
+        data: {}
+        target:
+          entity_id: '{{ scenes[next] }}'
+      - action: homeassistant.update_entity
+        data: {}
+        target:
+          entity_id:
+          - light.tv_light
+          - light.floor_lamp
+      - action: input_number.set_value
+        data:
+          value: '{{ next }}'
+        target:
+          entity_id: input_number.lounge_scene_index
+      on_long_action:
+      - action: light.turn_off
+        data:
+          transition: 1
+        target:
+          entity_id:
+          - light.tv_light
+          - light.floor_lamp
+          - light.kitchen_bench
+          - light.kitchen_strip
+          - light.desk_lamp
+      - action: input_number.set_value
+        data:
+          value: 0
+        target:
+          entity_id: input_number.living_room_scene_index
+      on_short_action:
+      - variables:
+          scenes:
+          - scene.living_room_bright
+          - scene.living_room_cool_bright
+          - scene.living_room_dreamy_dusk
+          - scene.living_room_lake_placid
+          - scene.living_room_nightlight
+          - scene.living_room_nighttime
+          - scene.living_room_read
+          - scene.living_room_savanna_sunset
+          - scene.living_room_shine
+          - scene.living_room_tropical_twilight
+          current: '{{ states(''input_number.living_room_scene_index'') | int }}'
+          next: '{{ (current + 1) % scenes | length }}'
+      - action: scene.turn_on
+        data: {}
+        target:
+          entity_id: '{{ scenes[next] }}'
+      - action: homeassistant.update_entity
+        data: {}
+        target:
+          entity_id:
+          - light.tv_light
+          - light.floor_lamp
+          - light.kitchen_bench
+          - light.kitchen_strip
+          - light.desk_lamp
+      - action: input_number.set_value
+        data:
+          value: '{{ next }}'
+        target:
+          entity_id: input_number.living_room_scene_index
+    path: lksnyder0/hue-remote-dimmer-january-2022.yaml
+- id: unifi_protect_lights_on
+  alias: Unifi Protect - Security Trigger
+  description: Triggered by Unifi Protect webhook. Turns on balcony lights for 2 minutes.
+  triggers:
+  - trigger: webhook
+    webhook_id: unifi_protect_security
+    allowed_methods:
+    - GET
+    - PUT
+    - POST
+    - HEAD
+    local_only: false
+  actions:
+  - action: light.turn_on
+    target:
+      entity_id:
+      - light.hue_lightstrip_outdoor_1
+      - light.floor_lamp
+      - light.desk_lamp
+    data: {}
+  - delay:
+      minutes: 2
+  - action: light.turn_off
+    target:
+      entity_id:
+      - light.hue_lightstrip_outdoor_1
+      - light.floor_lamp
+      - light.desk_lamp
+  mode: single
+- id: '1780013911633'
+  alias: Unifi Protect - LIght Trigger Balcony
+  description: Triggered by Unifi Protect webhook. Turns on balcony lights for 2 minutes.
+  triggers:
+  - trigger: webhook
+    webhook_id: unifi_protect_motion
+    allowed_methods:
+    - GET
+    - PUT
+    - POST
+    - HEAD
+    local_only: false
+  conditions: []
+  actions:
+  - action: light.turn_on
+    target:
+      entity_id:
+      - light.hue_lightstrip_outdoor_1
+    data: {}
+  - delay:
+      minutes: 2
+  - action: light.turn_off
+    target:
+      entity_id:
+      - light.hue_lightstrip_outdoor_1
+    data: {}
+  mode: single
+- id: '1780371788272'
+  alias: Unifi Desk Motion Light
+  description: 'Triggered by Unifi Protect webhook. '
+  triggers:
+  - trigger: webhook
+    webhook_id: unifi_desk_motion
+    allowed_methods:
+    - GET
+    - PUT
+    - POST
+    - HEAD
+    local_only: false
+  conditions: []
+  actions:
+  - action: light.turn_on
+    data:
+      transition: 5
+      color_temp_kelvin: 4791
+      brightness_pct: 47
+    target:
+      entity_id: light.desk_lamp
+  - delay:
+      minutes: 2
+  - action: light.turn_off
+    target:
+      entity_id: light.desk_lamp
+    data:
+      transition: 8
+  mode: single
+- id: '1781922863412'
+  alias: Kitchen Switch - with state change
+  description: ''
+  use_blueprint:
+    path: lksnyder0/hue-remote-dimmer-january-2022.yaml
+    input:
+      dimmer_device: 9fafabb81a75831ffaad0e6e512393ed
+      on_short_action:
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'off'
+        then:
+        - action: scene.turn_on
+          data: {}
+          target:
+            entity_id: scene.kitchen_bench_bright
+        - action: homeassistant.update_entity
+          data: {}
+          target:
+            entity_id: light.kitchen_bench
+        - action: input_number.set_value
+          data:
+            value: 0
+          target:
+            entity_id: input_number.kitchen_bench_scene_index
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'on'
+        then:
+        - variables:
+            scenes:
+            - scene.kitchen_bench_bright
+            - scene.kitchen_bench_cool_bright
+            - scene.kitchen_bench_dreamy_dusk
+            - scene.kitchen_bench_lake_placid
+            - scene.kitchen_bench_nightlight
+            - scene.kitchen_bench_nighttime
+            - scene.Kitchen_bench_read
+            - scene.kitchen_bench_savanna_sunsetvanna_sunset
+            - scene.kitchen_bench_shine
+            - scene.kitchen_bench_tropical_twilight
+            current: '{{ states(''input_number.kitchen_bench_scene_index'') | int
+              }}'
+            next: '{{ (current + 1) % (scenes | length) }}'
+        - action: scene.turn_on
+          data: {}
+          target:
+            entity_id: '{{ scenes[next] }}'
+        - action: homeassistant.update_entity
+          data: {}
+          target:
+            entity_id: light.kitchen_bench
+        - action: input_number.set_value
+          data:
+            value: '{{ next }}'
+          target:
+            entity_id: input_number.kitchen_bench_scene_index
+      on_long_action:
+      - action: light.turn_off
+        data:
+          transition: 1
+        target:
+          entity_id: light.kitchen_bench
+      - action: input_number.set_value
+        data:
+          value: 0
+        target:
+          entity_id: input_number.kitchen_bench_scene_index
+      brightness_up_short_action:
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.kitchen_bench
+      - if:
+        - condition: state
+          entity_id: light.kitchen_strip
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.kitchen_strip
+      brightness_up_long_action:
+      - action: switch.turn_on
+        data: {}
+        metadata: {}
+        target:
+          device_id: cbfb8aa70d0b3c1ec23d90bbf1dd9c03
+      brightness_up_repeat_action:
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.kitchen_bench
+      - if:
+        - condition: state
+          entity_id: light.kitchen_strip
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: 20
+            transition: 1
+          target:
+            entity_id: light.kitchen_strip
+      brightness_down_short_action:
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.kitchen_bench
+      - if:
+        - condition: state
+          entity_id: light.kitchen_strip
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.kitchen_strip
+      brightness_down_long_action:
+      - action: switch.turn_off
+        data: {}
+        metadata: {}
+        target:
+          device_id: cbfb8aa70d0b3c1ec23d90bbf1dd9c03
+      brightness_down_repeat_action:
+      - if:
+        - condition: state
+          entity_id: light.kitchen_bench
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.kitchen_bench
+      - if:
+        - condition: state
+          entity_id: light.kitchen_strip
+          state: 'on'
+        then:
+        - action: light.turn_on
+          data:
+            brightness_step: -20
+            transition: 1
+          target:
+            entity_id: light.kitchen_strip
+      off_short_action:
+      - variables:
+          scenes:
+          - scene.kitchen_bright
+          - scene.kitchen_cool_bright
+          - scene.kitchen_dreamy_dusk
+          - scene.kitchen_lake_placid
+          - scene.kitchen_nightlight
+          - scene.kitchen_nighttime
+          - scene.Kitchen_read
+          - scene.kitchen_savanna_sunsetvanna_sunset
+          - scene.kitchen_shine
+          - scene.tropical_twilight
+          current: '{{ states(''input_number.kitchen_scene_index'') | int }}'
+          next: '{{ (current + 1) % (scenes | length) }}'
+      - action: scene.turn_on
+        data: {}
+        target:
+          entity_id: '{{ scenes[next] }}'
+      - action: homeassistant.update_entity
+        data: {}
+        target:
+          entity_id:
+          - light.kitchen_bench
+          - light.kitchen_strip
+      - action: input_number.set_value
+        data:
+          value: '{{ next }}'
+        target:
+          entity_id: input_number.kitchen_scene_index
+      off_long_action:
+      - action: light.turn_off
+        data:
+          transition: 1
+        target:
+          entity_id:
+          - light.kitchen_bench
+          - light.kitchen_strip
+      - action: input_number.set_value
+        data:
+          value: 0
+        target:
+          entity_id: input_number.kitchen_scene_index

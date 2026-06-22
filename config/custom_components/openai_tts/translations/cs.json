@@ -1,0 +1,144 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Přidat OpenAI TTS službu",
+        "description": "Nastavte OpenAI TTS integration pro vytvoření TTS agents. API key je vyžadován pro OpenAI, volitelný pro custom endpoints.",
+        "data": {
+          "name": "Název účtu (volitelné, např. Osobní / Pracovní)",
+          "api_key": "API key (vyžadován pro OpenAI, volitelný pro custom endpoints)",
+          "url": "API endpoint (volitelné)"
+        }
+      },
+      "reconfigure": {
+        "title": "Překonfigurovat OpenAI TTS",
+        "description": "Aktualizovat přihlašovací údaje API pro tento integration.",
+        "data": {
+          "name": "Název účtu (volitelné, např. Osobní / Pracovní)",
+          "api_key": "API key",
+          "url": "API endpoint"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Znovu ověřit OpenAI TTS",
+        "description": "API key pro {title} již není platný. Zadejte prosím nový API key.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Tato instance je již nakonfigurována",
+      "reconfigure_successful": "Konfigurace byla úspěšně aktualizována",
+      "reauth_successful": "Opětovné ověření bylo úspěšné"
+    },
+    "error": {
+      "wrong_api_key": "Neplatný API key. Zadejte prosím platný API key.",
+      "invalid_api_key": "Neplatný API key. Zkontrolujte prosím svůj API key a zkuste to znovu.",
+      "cannot_connect": "Nelze se připojit k OpenAI API. Zkontrolujte prosím síť a API endpoint.",
+      "duplicate_api_key": "Záznam s tímto API key již existuje. Každý integration musí mít jedinečný API key."
+    }
+  },
+  "config_subentries": {
+    "profile": {
+      "entry_type": "TTS agent",
+      "initiate_flow": {
+        "user": "Přidat TTS agent",
+        "reconfigure": "Překonfigurovat TTS agent"
+      },
+      "step": {
+        "user": {
+          "title": "Přidat TTS agent (krok 1 z 2)",
+          "description": "Vyberte název a OpenAI model. Hlas a možnosti zvuku následují.",
+          "data": {
+            "profile_name": "Název profilu",
+            "model": "Model"
+          }
+        },
+        "voice_audio": {
+          "title": "Přidat TTS agent (krok 2 z 2)",
+          "description": "Hlas a možnosti zvuku pro model {model}. Poznámka: povolení chime nebo normalize_audio vypne streaming (vyžaduje post-processing).",
+          "data": {
+            "voice": "Hlas",
+            "speed": "Rychlost (0,25 až 4,0)",
+            "chime": "Povolit zvukový signál",
+            "chime_sound": "Zvuk signálu",
+            "normalize_audio": "Normalizovat hlasitost audia",
+            "instructions": "Vlastní pokyny (pouze gpt-4o-mini-tts)",
+            "extra_payload": "Extra JSON payload (pro custom TTS backends)",
+            "audio_format": "Audio format (mp3 je bezpečný default, změňte pouze pokud váš backend potřebuje jiný)"
+          }
+        },
+        "reconfigure": {
+          "title": "Aktualizovat TTS agent (krok 1 z 2)",
+          "description": "Vyberte model. Hlas a možnosti zvuku následují.",
+          "data": {
+            "model": "Model"
+          }
+        },
+        "reconfigure_voice": {
+          "title": "Aktualizovat TTS agent (krok 2 z 2)",
+          "description": "Hlas a možnosti zvuku pro model {model}. Poznámka: povolení chime nebo normalize_audio vypne streaming (vyžaduje post-processing).",
+          "data": {
+            "voice": "Hlas",
+            "speed": "Rychlost (0,25 až 4,0)",
+            "chime": "Povolit zvukový signál",
+            "chime_sound": "Zvuk signálu",
+            "normalize_audio": "Normalizovat hlasitost audia",
+            "instructions": "Vlastní pokyny (pouze gpt-4o-mini-tts)",
+            "extra_payload": "Extra JSON payload (pro custom TTS backends)",
+            "audio_format": "Audio format (mp3 je bezpečný default, změňte pouze pokud váš backend potřebuje jiný)"
+          }
+        }
+      },
+      "error": {
+        "already_exists": "Profil s tímto názvem již existuje"
+      },
+      "abort": {
+        "already_configured": "Profil je již nakonfigurován",
+        "reconfigure_successful": "TTS agent byl úspěšně překonfigurován",
+        "subentry_not_found": "TTS agent nebyl nalezen"
+      }
+    }
+  },
+  "options": {
+    "abort": {
+      "no_options_available": "Tento integration nemá konfigurovatelné možnosti. Pro konfiguraci jednotlivých TTS agents použijte podpoložky.",
+      "not_supported": "Tok možností není pro tuto položku podporován"
+    },
+    "step": {
+      "init": {
+        "title": "Konfigurovat možnosti TTS",
+        "description": "Konfigurovat nastavení pro tento TTS profil",
+        "data": {
+          "chime": "Povolit zvukový signál před řečí (užitečné pro oznámení)",
+          "chime_sound": "Zvuk signálu",
+          "speed": "Rychlost (0,25 až 4,0)",
+          "model": "Model",
+          "voice": "Hlas",
+          "enable_instructions": "Povolit vlastní pokyny",
+          "instructions": "Pokyny (ponechte prázdné pro deaktivaci)",
+          "normalize_audio": "Povolit zvýšení hlasitosti generovaného audia (vyžaduje více CPU)",
+          "volume_restore": "Obnovit hlasitost reproduktorů po přehrávání TTS",
+          "pause_playback": "Pozastavit média během TTS (pouze Sonos)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "api_status": {
+        "name": "Stav",
+        "state": {
+          "ok": "OK",
+          "auth_failed": "Selhání ověření",
+          "quota_exceeded": "Vyčerpán limit",
+          "rate_limited": "Rate limited",
+          "server_error": "Chyba serveru",
+          "network_error": "Chyba sítě",
+          "unknown_error": "Neznámá chyba"
+        }
+      }
+    }
+  }
+}

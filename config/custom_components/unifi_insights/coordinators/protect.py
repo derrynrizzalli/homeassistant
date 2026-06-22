@@ -1,0 +1,571 @@
+"""Protect coordinator for UniFi Insights - handles Protect device data."""
+
+from __future__ import annotations
+
+import logging
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
+
+from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
+
+from custom_components.unifi_insights.api import (
+    UniFiAuthenticationError,
+    UniFiConnectionError,
+    UniFiResponseError,
+    UniFiTimeoutError,
+)
+from custom_components.unifi_insights.const import (
+    DEVICE_TYPE_CAMERA,
+    DEVICE_TYPE_CHIME,
+    DEVICE_TYPE_LIGHT,
+    DEVICE_TYPE_NVR,
+    DEVICE_TYPE_SENSOR,
+    DEVICE_TYPE_VIEWER,
+    DOMAIN,
+    SCAN_INTERVAL_PROTECT,
+)
+
+from .base import UnifiBaseCoordinator
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
+
+    from custom_components.unifi_insights.api.network import UniFiNetworkClient
+    from custom_components.unifi_insights.api.protect import UniFiProtectClient
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class UnifiProtectCoordinator(UnifiBaseCoordinator):
+    """
+    Coordinator for UniFi Protect device data (30 second updates + WebSocket).
+
+    Handles:
+    - Cameras (with streaming support)
+    - Lights
+    - Sensors
+    - NVR
+    - Viewers
+    - Chimes
+    - Liveviews
+    - Real-time events via WebSocket
+    """
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        network_client: UniFiNetworkClient,
+        protect_client: UniFiProtectClient | None,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the Protect coordinator."""
+        super().__init__(
+            hass=hass,
+            network_client=network_client,
+            protect_client=protect_client,
+            entry=entry,
+            name="protect",
+            update_interval=SCAN_INTERVAL_PROTECT,
+        )
+        # Track previous device IDs for stale device cleanup (Gold requirement)
+        self._previous_protect_device_ids: dict[str, set[str]] = {
+            "cameras": set(),
+            "lights": set(),
+            "sensors": set(),
+            "nvrs": set(),
+            "viewers": set(),
+            "chimes": set(),
+        }
+        self.data: dict[str, Any] = {
+            "cameras": {},
+            "lights": {},
+            "sensors": {},
+            "nvrs": {},
+            "viewers": {},
+            "chimes": {},
+            "liveviews": {},
+            "protect_info": {},
+            "events": {},
+            "last_update": None,
+        }
+
+        # Register WebSocket callbacks if Protect API is available
+        if self.protect_client:
+            self._setup_websocket_callbacks()
+
+    def _setup_websocket_callbacks(self) -> None:
+        """Set up WebSocket callbacks for real-time updates."""
+        if not self.protect_client:
+            return
+
+        try:
+            registered = False
+            if hasattr(self.protect_client, "register_device_update_callback"):
+                self.protect_client.register_device_update_callback(
+                    self._handle_device_update
+                )
+                registered = True
+            if hasattr(self.protect_client, "register_event_update_callback"):
+                self.protect_client.register_event_update_callback(
+                    self._handle_event_update
+                )
+                registered = True
+            if registered:
+                _LOGGER.debug("Protect coordinator: WebSocket callbacks registered")
+        except Exception as err:
+            _LOGGER.debug(
+                "Protect coordinator: WebSocket callbacks not supported: %s", err
+            )
+
+    @callback
+    def _handle_device_update(
+        self, model_key: str, device_data: dict[str, Any]
+    ) -> None:
+        """Handle device update from WebSocket."""
+        device_id = device_data.get("id")
+        if not device_id:
+            return
+
+        _LOGGER.debug(
+            "Protect coordinator: WebSocket device update for %s: %s",
+            model_key,
+            device_id,
+        )
+
+        if model_key == DEVICE_TYPE_CAMERA:
+            existing_camera = self.data["cameras"].get(device_id, {})
+            merged_camera = {
+                **existing_camera,
+                **device_data,
+            }
+            self.data["cameras"][device_id] = self._normalize_camera_data(merged_camera)
+        elif model_key == DEVICE_TYPE_LIGHT:
+            self.data["lights"][device_id] = {
+                **self.data["lights"].get(device_id, {}),
+                **device_data,
+            }
+        elif model_key == DEVICE_TYPE_SENSOR:
+            self.data["sensors"][device_id] = {
+                **self.data["sensors"].get(device_id, {}),
+                **device_data,
+            }
+        elif model_key == DEVICE_TYPE_NVR:
+            self.data["nvrs"][device_id] = {
+                **self.data["nvrs"].get(device_id, {}),
+                **device_data,
+            }
+        elif model_key == DEVICE_TYPE_VIEWER:
+            self.data["viewers"][device_id] = {
+                **self.data["viewers"].get(device_id, {}),
+                **device_data,
+            }
+        elif model_key == DEVICE_TYPE_CHIME:
+            self.data["chimes"][device_id] = {
+                **self.data["chimes"].get(device_id, {}),
+                **device_data,
+            }
+
+        self.async_update_listeners()
+
+    def _normalize_camera_data(self, camera: dict[str, Any]) -> dict[str, Any]:
+        """Normalize camera fields across alias and legacy payload shapes."""
+        normalized = dict(camera)
+
+        feature_flags = normalized.get("featureFlags")
+        if not isinstance(feature_flags, dict):
+            legacy_feature_flags = normalized.get("feature_flags")
+            feature_flags = (
+                legacy_feature_flags if isinstance(legacy_feature_flags, dict) else {}
+            )
+        normalized["featureFlags"] = feature_flags
+
+        smart_detect_types = normalized.get("smartDetectTypes")
+        if not isinstance(smart_detect_types, list):
+            legacy_smart_detect_types = normalized.get("smart_detect_types")
+            if isinstance(legacy_smart_detect_types, list):
+                smart_detect_types = legacy_smart_detect_types
+            else:
+                smart_detect_types = feature_flags.get("smartDetectTypes")
+                if not isinstance(smart_detect_types, list):
+                    feature_flag_types = feature_flags.get("smart_detect_types")
+                    smart_detect_types = (
+                        feature_flag_types
+                        if isinstance(feature_flag_types, list)
+                        else []
+                    )
+        normalized["smartDetectTypes"] = smart_detect_types
+
+        is_ptz = normalized.get("isPtz")
+        if not isinstance(is_ptz, bool):
+            legacy_is_ptz = normalized.get("is_ptz")
+            if isinstance(legacy_is_ptz, bool):
+                is_ptz = legacy_is_ptz
+            else:
+                is_ptz = bool(
+                    normalized.get("hasPtz")
+                    or feature_flags.get("hasPtz")
+                    or feature_flags.get("has_ptz")
+                )
+        normalized["isPtz"] = is_ptz
+        normalized["hasPtz"] = is_ptz
+
+        last_smart_detect_types = normalized.get("lastSmartDetectTypes")
+        if not isinstance(last_smart_detect_types, list):
+            normalized["lastSmartDetectTypes"] = []
+
+        if "lastMotion" not in normalized:
+            normalized["lastMotion"] = 0
+        if "lastRing" not in normalized:
+            normalized["lastRing"] = 0
+
+        return normalized
+
+    @callback
+    def _handle_event_update(self, event_type: str, event_data: dict[str, Any]) -> None:
+        """Handle event update from WebSocket."""
+        event_id = event_data.get("id")
+        if not event_id:
+            return
+
+        _LOGGER.debug(
+            "Protect coordinator: WebSocket event update for %s: %s",
+            event_type,
+            event_id,
+        )
+
+        # Store event data
+        if event_type not in self.data["events"]:
+            self.data["events"][event_type] = {}
+
+        self.data["events"][event_type][event_id] = event_data
+
+        # Update device last event time if applicable
+        device_id = event_data.get("device")
+        if device_id:
+            self._process_event_for_device(event_type, event_data, device_id)
+
+        self.async_update_listeners()
+
+    def _process_event_for_device(
+        self, event_type: str, event_data: dict[str, Any], device_id: str
+    ) -> None:
+        """Process event data and update relevant device."""
+        # Check if this is a camera motion event
+        if event_type == "motion" and device_id in self.data["cameras"]:
+            self.data["cameras"][device_id]["lastMotionStart"] = event_data.get("start")
+            self.data["cameras"][device_id]["lastMotionEnd"] = event_data.get("end")
+            self.data["cameras"][device_id]["lastSmartDetectTypes"] = []
+            _LOGGER.info(
+                "Protect coordinator: Motion event for camera %s: start=%s, end=%s",
+                device_id,
+                event_data.get("start"),
+                event_data.get("end"),
+            )
+
+        # Check if this is a light motion event
+        elif event_type == "motion" and device_id in self.data["lights"]:
+            self.data["lights"][device_id]["lastMotionStart"] = event_data.get("start")
+            self.data["lights"][device_id]["lastMotionEnd"] = event_data.get("end")
+
+        # Check if this is a smart detection event
+        elif event_type == "smartDetectZone" and device_id in self.data["cameras"]:
+            smart_detect_types = event_data.get("smartDetectTypes", [])
+            event_start = event_data.get("start", 0)
+            event_end = event_data.get("end")
+
+            self.data["cameras"][device_id]["lastMotionStart"] = event_start
+            self.data["cameras"][device_id]["lastMotionEnd"] = event_end
+            self.data["cameras"][device_id]["lastSmartDetectTypes"] = smart_detect_types
+
+            _LOGGER.info(
+                "Protect coordinator: Smart detection for camera %s: %s "
+                "(start=%s, end=%s)",
+                device_id,
+                smart_detect_types,
+                event_start,
+                event_end,
+            )
+
+        # Check if this is a doorbell ring event
+        elif event_type == "ring" and device_id in self.data["cameras"]:
+            self.data["cameras"][device_id]["lastRingStart"] = event_data.get("start")
+            self.data["cameras"][device_id]["lastRingEnd"] = event_data.get("end")
+            _LOGGER.info(
+                "Protect coordinator: Doorbell ring for camera %s: start=%s, end=%s",
+                device_id,
+                event_data.get("start"),
+                event_data.get("end"),
+            )
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Fetch Protect data from API."""
+        if not self.protect_client:
+            _LOGGER.debug("Protect coordinator: No Protect client available")
+            return self.data
+
+        try:
+            _LOGGER.debug("Protect coordinator: Fetching Protect data")
+
+            # Fetch cameras
+            await self._fetch_cameras()
+
+            # Fetch lights
+            await self._fetch_lights()
+
+            # Fetch sensors
+            await self._fetch_sensors()
+
+            # Fetch NVR
+            await self._fetch_nvr()
+
+            # Fetch chimes
+            await self._fetch_chimes()
+
+            # Fetch viewers
+            await self._fetch_viewers()
+
+            # Fetch liveviews
+            await self._fetch_liveviews()
+
+            self._available = True
+            self.data["last_update"] = datetime.now(tz=UTC)
+
+            # Clean up stale devices (Gold requirement)
+            self._cleanup_stale_devices()
+
+            _LOGGER.debug(
+                "Protect coordinator: Update complete - "
+                "%d cameras, %d lights, %d sensors, %d NVRs, "
+                "%d chimes, %d viewers, %d liveviews",
+                len(self.data["cameras"]),
+                len(self.data["lights"]),
+                len(self.data["sensors"]),
+                len(self.data["nvrs"]),
+                len(self.data["chimes"]),
+                len(self.data["viewers"]),
+                len(self.data["liveviews"]),
+            )
+
+            return self.data
+
+        except UniFiAuthenticationError as err:
+            self._handle_auth_error(err)
+        except UniFiConnectionError as err:
+            self._handle_connection_error(err)
+        except UniFiTimeoutError as err:
+            self._handle_timeout_error(err)
+        except UniFiResponseError as err:
+            self._handle_response_error(err)
+        except Exception as err:
+            self._handle_generic_error(err)
+
+        # Should never reach here due to raises above
+        return self.data  # pragma: no cover
+
+    async def _fetch_cameras(self) -> None:
+        """Fetch camera data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching cameras")
+        cameras_models = await self.protect_client.cameras.get_all()
+        # Rebuild the dict from the API response so cameras removed from
+        # Protect disappear from coordinator data (enables stale cleanup).
+        cameras: dict[str, Any] = {}
+        for camera_model in cameras_models:
+            camera = self._normalize_camera_data(self._model_to_dict(camera_model))
+            camera_id = camera.get("id")
+            if camera_id:
+                cameras[camera_id] = camera
+
+                _LOGGER.debug(
+                    "Protect coordinator: Camera %s supports smart detection: %s",
+                    camera.get("name", camera_id),
+                    camera.get("smartDetectTypes", []),
+                )
+        self.data["cameras"] = cameras
+
+    async def _fetch_lights(self) -> None:
+        """Fetch light data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching lights")
+        lights_models = await self.protect_client.lights.get_all()
+        lights: dict[str, Any] = {}
+        for light_model in lights_models:
+            light = self._model_to_dict(light_model)
+            light_id = light.get("id")
+            if light_id:
+                lights[light_id] = light
+        self.data["lights"] = lights
+
+    async def _fetch_sensors(self) -> None:
+        """Fetch sensor data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching sensors")
+        try:
+            sensors_models = await self.protect_client.sensors.get_all()
+            sensors: dict[str, Any] = {}
+            for sensor_model in sensors_models:
+                sensor = self._model_to_dict(sensor_model)
+                sensor_id = sensor.get("id")
+                if sensor_id:
+                    sensors[sensor_id] = sensor
+            self.data["sensors"] = sensors
+            _LOGGER.debug(
+                "Protect coordinator: Successfully fetched %d sensors",
+                len(sensors_models),
+            )
+        except Exception as err:
+            _LOGGER.warning("Protect coordinator: Error fetching sensors: %s", err)
+
+    async def _fetch_nvr(self) -> None:
+        """Fetch NVR data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching NVR")
+        try:
+            nvr_model = await self.protect_client.nvr.get()
+            nvr = self._model_to_dict(nvr_model)
+            if nvr:
+                nvr_id = nvr.get("id")
+                if nvr_id:
+                    self.data["nvrs"] = {nvr_id: nvr}
+                    _LOGGER.debug(
+                        "Protect coordinator: Successfully fetched NVR: %s", nvr_id
+                    )
+        except Exception as err:
+            _LOGGER.debug("Protect coordinator: Error fetching NVR: %s", err)
+
+    async def _fetch_chimes(self) -> None:
+        """Fetch chime data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching chimes")
+        try:
+            chimes_models = await self.protect_client.chimes.get_all()
+            chimes: dict[str, Any] = {}
+            for chime_model in chimes_models:
+                chime = self._model_to_dict(chime_model)
+                chime_id = chime.get("id")
+                if chime_id:
+                    chimes[chime_id] = chime
+            self.data["chimes"] = chimes
+            _LOGGER.debug(
+                "Protect coordinator: Successfully fetched %d chimes",
+                len(chimes_models),
+            )
+        except Exception as err:
+            _LOGGER.warning("Protect coordinator: Error fetching chimes: %s", err)
+
+    async def _fetch_viewers(self) -> None:
+        """Fetch viewer data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching viewers")
+        try:
+            if hasattr(self.protect_client, "viewers"):
+                viewers_models = await self.protect_client.viewers.get_all()
+                viewers: dict[str, Any] = {}
+                for viewer_model in viewers_models:
+                    viewer = self._model_to_dict(viewer_model)
+                    viewer_id = viewer.get("id")
+                    if viewer_id:
+                        viewers[viewer_id] = viewer
+                self.data["viewers"] = viewers
+                _LOGGER.debug(
+                    "Protect coordinator: Successfully fetched %d viewers",
+                    len(viewers_models),
+                )
+        except Exception as err:
+            _LOGGER.debug("Protect coordinator: Error fetching viewers: %s", err)
+
+    async def _fetch_liveviews(self) -> None:
+        """Fetch liveview data."""
+        if not self.protect_client:
+            return
+
+        _LOGGER.debug("Protect coordinator: Fetching liveviews")
+        try:
+            if hasattr(self.protect_client, "liveviews"):
+                liveviews_models = await self.protect_client.liveviews.get_all()
+                liveviews: dict[str, Any] = {}
+                for liveview_model in liveviews_models:
+                    liveview = self._model_to_dict(liveview_model)
+                    liveview_id = liveview.get("id")
+                    if liveview_id:
+                        liveviews[liveview_id] = liveview
+                self.data["liveviews"] = liveviews
+                _LOGGER.debug(
+                    "Protect coordinator: Successfully fetched %d liveviews",
+                    len(liveviews_models),
+                )
+        except Exception as err:
+            _LOGGER.debug("Protect coordinator: Error fetching liveviews: %s", err)
+
+    def _cleanup_stale_devices(self) -> None:
+        """Remove stale Protect devices from the device registry (Gold requirement)."""
+        device_registry = dr.async_get(self.hass)
+
+        for device_type in [
+            "cameras",
+            "lights",
+            "sensors",
+            "nvrs",
+            "viewers",
+            "chimes",
+        ]:
+            current_ids: set[str] = set(self.data.get(device_type, {}).keys())
+            previous_ids = self._previous_protect_device_ids.get(device_type, set())
+
+            stale_ids = previous_ids - current_ids
+            for device_id in stale_ids:
+                # Try both identifier patterns (with and without "protect_" prefix)
+                for identifier in [
+                    f"protect_{device_type[:-1]}_{device_id}",  # protect_camera_xyz
+                    device_id,  # Just the device ID
+                ]:
+                    device = device_registry.async_get_device(
+                        identifiers={(DOMAIN, identifier)}
+                    )
+                    if device:
+                        _LOGGER.info(
+                            "Protect coordinator: Removing stale %s device: %s",
+                            device_type,
+                            device_id,
+                        )
+                        device_registry.async_update_device(
+                            device_id=device.id,
+                            remove_config_entry_id=self.config_entry.entry_id,
+                        )
+                        break
+
+            self._previous_protect_device_ids[device_type] = current_ids
+
+    def get_camera(self, camera_id: str) -> dict[str, Any] | None:
+        """Get camera data by ID."""
+        result = self.data.get("cameras", {}).get(camera_id)
+        return result if isinstance(result, dict) else None
+
+    def get_light(self, light_id: str) -> dict[str, Any] | None:
+        """Get light data by ID."""
+        result = self.data.get("lights", {}).get(light_id)
+        return result if isinstance(result, dict) else None
+
+    def get_sensor(self, sensor_id: str) -> dict[str, Any] | None:
+        """Get sensor data by ID."""
+        result = self.data.get("sensors", {}).get(sensor_id)
+        return result if isinstance(result, dict) else None
+
+    def get_nvr(self, nvr_id: str) -> dict[str, Any] | None:
+        """Get NVR data by ID."""
+        result = self.data.get("nvrs", {}).get(nvr_id)
+        return result if isinstance(result, dict) else None

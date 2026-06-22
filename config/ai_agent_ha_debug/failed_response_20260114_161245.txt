@@ -1,0 +1,15 @@
+Timestamp: 20260114_161245
+Provider: gemini
+Error: Invalid control character at: line 1 column 198 (char 197)
+Response length: 752
+Response bytes: b'{"request_type": "final_response", "response": "I can help you create an automation that uses the concept of your Hue Dimmer Remote blueprint! To do this, I\'ll need a bit more information from you.\n\nPlease tell me:\n1.  **Which specific Hue dimmer switch** do you want to use? (e.g., \'dimmer_switch_living_room\', \'hue_dimmer_remote_1\')\n2.  What action(s) would you like to happen when you **short press the ON button**? (e.g., \'turn on light.living_room_lights\', \'activate scene.bright_lights\')\n3.  What action(s) would you like to happen when you **long press the ON button**? (e.g., \'turn on light.kitchen_lights\', \'set brightness of light.living_room_lights to 50%\')\n\nOnce I have this information, I can suggest an automation configuration for you."}'
+Response repr: '{"request_type": "final_response", "response": "I can help you create an automation that uses the concept of your Hue Dimmer Remote blueprint! To do this, I\'ll need a bit more information from you.\n\nPlease tell me:\n1.  **Which specific Hue dimmer switch** do you want to use? (e.g., \'dimmer_switch_living_room\', \'hue_dimmer_remote_1\')\n2.  What action(s) would you like to happen when you **short press the ON button**? (e.g., \'turn on light.living_room_lights\', \'activate scene.bright_lights\')\n3.  What action(s) would you like to happen when you **long press the ON button**? (e.g., \'turn on light.kitchen_lights\', \'set brightness of light.living_room_lights to 50%\')\n\nOnce I have this information, I can suggest an automation configuration for you."}'
+Full response:
+{"request_type": "final_response", "response": "I can help you create an automation that uses the concept of your Hue Dimmer Remote blueprint! To do this, I'll need a bit more information from you.
+
+Please tell me:
+1.  **Which specific Hue dimmer switch** do you want to use? (e.g., 'dimmer_switch_living_room', 'hue_dimmer_remote_1')
+2.  What action(s) would you like to happen when you **short press the ON button**? (e.g., 'turn on light.living_room_lights', 'activate scene.bright_lights')
+3.  What action(s) would you like to happen when you **long press the ON button**? (e.g., 'turn on light.kitchen_lights', 'set brightness of light.living_room_lights to 50%')
+
+Once I have this information, I can suggest an automation configuration for you."}

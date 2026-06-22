@@ -1,0 +1,23 @@
+- platform: integration
+  source: sensor.home_total_power_all_plugs
+  name: Total Energy All Plugs
+  unique_id: home_total_energy_all_plugs
+  unit_prefix: k
+  round: 3
+  method: trapezoidal
+
+- platform: integration
+  source: sensor.lounge_entertainment_white_difference_power
+  name: Entertainment White Difference
+  unique_id: lounge_entertainment_white_difference_energy
+  unit_prefix: k
+  round: 3
+  method: trapezoidal
+
+- platform: integration
+  source: sensor.office_power_all_plugs
+  name: Office Total Energy
+  unique_id: office_total_energy
+  unit_prefix: k
+  round: 3
+  method: trapezoidal

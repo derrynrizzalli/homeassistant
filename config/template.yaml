@@ -1,0 +1,45 @@
+#Template
+
+# Total Power all plugs, excludes TV Plug as it is connected to Entertainment Cabinet Plug
+- sensor:
+    - name: Total Power All Plugs
+      unique_id: home_total_power_all_plugs
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+      state: >
+        {{
+          states('sensor.kitchen_dishwasher_plug_power') | float(0)
+        + states('sensor.kitchen_fridge_plug_power') | float(0)
+        + states('sensor.office_aux_power') | float(0)
+        + states('sensor.office_main_plug_power') | float(0)
+        + states('sensor.laundry_washing_machine_plug_power') | float(0)
+        + states('sensor.living_room_sofa_extension_power') | float(0)
+        + states('sensor.lounge_ultra_black_hp_power') | float(0)
+        + states('sensor.lounge_ventilation_fans_power') | float(0)
+        + states('sensor.lounge_network_plug_black_multi_power') | float(0)
+        + states('sensor.lounge_entertainment_white_multi_power') | float(0)
+        + states('sensor.lounge_entertainment_white_Difference_power') | float(0)
+        }}
+
+    - name: Entertainment White Difference Power
+      unique_id: lounge_entertainment_white_difference_power
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+      state: >
+        {{
+          states('sensor.lounge_entertainment_white_multi_power') | float(0)
+        - states('sensor.lounge_ventilation_fans_power') | float(0)
+        }}
+
+    - name: Office Power All Plugs
+      unique_id: Office_total_power_all_plugs
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+      state: >
+        {{
+          states('sensor.office_main_plug_power') | float(0)
+        + states('sensor.office_aux_power') | float(0)
+        }}

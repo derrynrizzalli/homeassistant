@@ -1,0 +1,64 @@
+ESPHome:
+  maintainer: ESPHome <esphome@nabucasa.com>
+  slug: 5c53de3b
+  source: https://github.com/esphome/home-assistant-addon
+FaserF's Home Assistant Apps:
+  maintainer: FaserF
+  slug: 605cee21
+  source: https://github.com/faserf/hassio-addons
+Frosh Home Assistant Add-ons:
+  maintainer: casse-boubou
+  slug: 45b520ff
+  source: https://github.com/casse-boubou/hassio-addons
+Grafana Home Assistant add-on repository:
+  maintainer: Dan Cech <dcech@grafana.com>
+  slug: f43ab913
+  source: https://github.com/grafana/home-assistant-addons
+Hass.IO dianlight Beta add-on repository:
+  maintainer: Lucio Tarantino <lucio.tarantino@gmail.com>
+  slug: c9a35110
+  source: https://github.com/dianlight/hassio-addons-beta
+Hass.IO dianlight add-on repository:
+  maintainer: Lucio Tarantino <lucio.tarantino@gmail.com>
+  slug: 1a32f091
+  source: https://github.com/dianlight/hassio-addons
+Home Assistant Community Apps:
+  maintainer: Franck Nijhof <opensource@frenck.dev>
+  slug: a0d7b954
+  source: https://github.com/hassio-addons/repository
+Home Assistant Community Store:
+  maintainer: HACS <hi@hacs.xyz>
+  slug: cb646a50
+  source: https://github.com/hacs/addons
+Logan Marchione Home Assistant Add-Ons:
+  maintainer: Logan Marchione
+  slug: 0d869efa
+  source: https://github.com/loganmarchione/hassos-addons
+Music Assistant:
+  maintainer: Music Assistant <marcelveldt@users.noreply.github.com>
+  slug: d5369777
+  source: https://github.com/music-assistant/home-assistant-addon
+Poeschl Home Assistant Add-ons:
+  maintainer: Poeschl <Poeschl@users.noreply.github.com>
+  slug: 68413af6
+  source: https://github.com/Poeschl-HomeAssistant-Addons/repository
+Robson Felix's Add-ons:
+  maintainer: Robson Felix
+  slug: 1016f397
+  source: https://github.com/robsonfelix/robsonfelix-hass-addons
+Tom's Home Assistant Add-ons:
+  maintainer: Thomas Mauerer
+  slug: 15d21743
+  source: https://github.com/thomasmauerer/hassio-addons
+Unbound DNS Home Assistant Addon:
+  maintainer: cgfm <o6arumdm@addy.io>
+  slug: f91c3f86
+  source: https://github.com/cgfm/Unbound-DNS-AddOn
+Unofficial Home Assistant Apps (Add-ons):
+  maintainer: Unofficial Homeassistant Apps (Add-ons) <https://github.com/homeassistant-apps>
+  slug: 396f0234
+  source: https://github.com/homeassistant-apps/repository
+mdegat01's Home Assistant Add-ons:
+  maintainer: mdegat01
+  slug: 39bd2704
+  source: https://github.com/mdegat01/hassio-addons

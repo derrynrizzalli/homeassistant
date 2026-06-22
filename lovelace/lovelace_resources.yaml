@@ -1,0 +1,22 @@
+items:
+- id: a41ae0b43b844aeaaba5a6e63bdf390e
+  type: module
+  url: /hacsfiles/mini-climate-card/mini-climate-card-bundle.js?hacstag=268163975274
+- id: 496eb9eee1f044caa8709b7bb1d8e23e
+  type: module
+  url: /hacsfiles/mini-graph-card/mini-graph-card-bundle.js?hacstag=1512800620130
+- id: ae34abe64d87497293520b89ae3439ba
+  type: module
+  url: /hacsfiles/lovelace-background-graph-entities/background-graph-entities.js?hacstag=801915116171
+- id: 90e0d0d6c0734255ba80763e1e784f74
+  type: module
+  url: /hacsfiles/lumina-energy-card/lumina-energy-card.js?hacstag=1120334068365
+- id: 2eb9a7fef10a48f5b3b1810c2b12328a
+  type: module
+  url: /hacsfiles/lovelace-unavailable-entity-card/unavailable-entity-card.js?hacstag=1111145524110
+- id: 6d12e119e2e14146803681c395975f2a
+  type: module
+  url: /ha_washdata/ha-washdata-card.js?v=1781385274
+- id: e92df4722f294217ad98dd2adc5355c0
+  type: module
+  url: /unifi-network-map/unifi-network-map.js?v=0.5.3-1779451215

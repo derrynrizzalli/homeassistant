@@ -1,0 +1,7 @@
+items:
+- id: dashboard_d
+  mode: storage
+  require_admin: false
+  show_in_sidebar: true
+  title: Custom Dashboards
+  url_path: dashboard-d
