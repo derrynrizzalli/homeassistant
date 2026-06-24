@@ -1,5 +1,5 @@
 - platform: integration
-  source: sensor.lounge_entertainment_white_difference_power
+  source: sensor.lounge_entertainment_white_difference
   name: Entertainment White Difference
   unique_id: lounge_entertainment_white_difference_energy
   unit_prefix: k
