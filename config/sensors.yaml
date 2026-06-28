@@ -5,3 +5,11 @@
   unit_prefix: k
   round: 3
   method: trapezoidal
+
+- platform: integration
+  source: sensor.total_house_power
+  name: Total House Energy
+  unique_id: home_total_house_energy
+  unit_prefix: k
+  round: 3
+  method: trapezoidal

@@ -9,3 +9,15 @@
           states('sensor.lounge_entertainment_white_multi_power') | float(0)
         - states('sensor.lounge_ventilation_fans_power') | float(0)
         }}
+
+    - name: Total House Power
+      unique_id: home_total_house_power
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+      state: >
+        {% set power_sensors = states.sensor
+          | selectattr('attributes.device_class', 'defined')
+          | selectattr('attributes.device_class', 'eq', 'power')
+          | rejectattr('entity_id', 'eq', 'sensor.total_house_power') %}
+        {{ power_sensors | map(attribute='state') | map('float', 0) | sum | round(2) }}
